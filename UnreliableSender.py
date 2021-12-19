@@ -19,6 +19,14 @@ class UnreliableSender(BasicSender.BasicSender):
     # Main sending loop.
     def start(self):
         seqno = 0
+        packet = self.make_packet('start', 0, '')
+        self.send(packet)
+        print('sent: %s' % packet)
+        response = self.receive()
+        response = response.decode()
+        self.handle_response(response)
+        seqno += 1
+        
         msg = self.infile.read(500)
         msg_type = None
         while not msg_type == 'end':
