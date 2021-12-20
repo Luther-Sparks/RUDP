@@ -100,8 +100,7 @@ class Sender(BasicSender.BasicSender):
             # store the packet information in the packet dict
             # so that we can examine timeout and resend it later
             self.store_packet(self.seqno, self.spacket)
-            print("Sending packet %d" % self.seqno)
-            print("sent: %s" % self.spacket)
+            print("Sending packet [%d]: %s" % (self.seqno, self.spacket))
             self.send(self.spacket)
             self.seqno += 1
         
@@ -113,8 +112,7 @@ class Sender(BasicSender.BasicSender):
         """
         for i in range(start, self.seqno):
             self.spacket = self.packets[i]['packet']
-            print("Resending packet %d" % i)
-            print("resend: %s" % self.spacket)
+            print("Resending packet [%d]: %s" % (i, self.spacket))
             self.send(self.spacket)
             
     def sack_resend(self):
@@ -129,6 +127,7 @@ class Sender(BasicSender.BasicSender):
         """
         try:
             self.rpacket = self.receive(self.timeout).decode()
+            # print('seqno:', self.seqno, 'rpacket:', self.rpacket)
             if Checksum.validate_checksum(self.rpacket):
                 self.ack = self.get_ack()
                 if self.ack > self.window_start and self.ack <= self.seqno:

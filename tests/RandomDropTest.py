@@ -13,9 +13,9 @@ create your own.
 class RandomDropTest(BasicTest):
     def handle_packet(self):
         for p in self.forwarder.in_queue:
-            print('in_queue:', self.forwarder.in_queue)
             if random.choice([True, False]):
                 self.forwarder.out_queue.append(p)
+                print(self.forwarder.out_queue)
 
         # empty out the in_queue
         self.forwarder.in_queue = []
