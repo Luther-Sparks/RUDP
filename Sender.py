@@ -103,7 +103,7 @@ class Sender(BasicSender.BasicSender):
             # store the packet information in the packet dict
             # so that we can examine timeout and resend it later
             self.store_packet(self.seqno, self.spacket)
-            print("Sending packet [%d]: %s" % (self.seqno, msg_type))
+            print("Sending packet [%d]: %s" % (self.seqno, self.spacket[:20]))
             # print("Sending packet [%d]: %s" % (self.seqno, self.spacket))
             self.send(self.spacket)
             self.seqno += 1
