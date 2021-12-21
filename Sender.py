@@ -29,6 +29,8 @@ class Sender(BasicSender.BasicSender):
         self.packets  = dict()                      # the packet dict which stores unacknowledged packets
         self.connected = False                      # connection status
         self.endseqno = None                        # end sequence number
+        self.ack_count = [None, 0]                  # (ack, duplicate ack count)
+        self.dup_ack_threshold = 3                  # duplicate ack threshold
         
     def get_data(self):
         """get the data to send and store next data to be sent
@@ -95,12 +97,14 @@ class Sender(BasicSender.BasicSender):
             # send window is not full yet
             msg_type, msg = self.get_data()
             self.spacket = self.make_packet(msg_type, self.seqno, msg)
-            if msg_type == 'end':
+            if msg_type == 'end' and self.endseqno == None:
+                print('endseqno', self.endseqno)
                 self.endseqno = self.seqno
             # store the packet information in the packet dict
             # so that we can examine timeout and resend it later
             self.store_packet(self.seqno, self.spacket)
-            print("Sending packet [%d]: %s" % (self.seqno, self.spacket))
+            print("Sending packet [%d]: %s" % (self.seqno, msg_type))
+            # print("Sending packet [%d]: %s" % (self.seqno, self.spacket))
             self.send(self.spacket)
             self.seqno += 1
         
@@ -112,7 +116,8 @@ class Sender(BasicSender.BasicSender):
         """
         for i in range(start, self.seqno):
             self.spacket = self.packets[i]['packet']
-            print("Resending packet [%d]: %s" % (i, self.spacket))
+            print("Resending packet [%d]" % (i))
+            # print("Resending packet [%d]: %s" % (i, self.spacket))
             self.send(self.spacket)
             
     def sack_resend(self):
@@ -130,7 +135,12 @@ class Sender(BasicSender.BasicSender):
             # print('seqno:', self.seqno, 'rpacket:', self.rpacket)
             if Checksum.validate_checksum(self.rpacket):
                 self.ack = self.get_ack()
-                if self.ack > self.window_start and self.ack <= self.seqno:
+                print("Received ack: [%d] %s window_start: [%d]" % (self.ack, self.rpacket, self.window_start))
+                if self.ack >= self.window_start:
+                    if self.ack != self.ack_count[0]:
+                        self.handle_new_ack(self.ack)
+                    else:
+                        self.handle_dup_ack(self.ack)
                     # received ack within the window
                     # update window start
                     while self.window_start < self.ack:
@@ -147,6 +157,7 @@ class Sender(BasicSender.BasicSender):
         for seqno, packet in self.packets.items():
             if now - packet['time'] > self.timeout:
                 self.log("timeout: %d" % seqno)
+                self.packets[seqno]['time'] = now
                 return seqno
         return None
 
@@ -160,33 +171,42 @@ class Sender(BasicSender.BasicSender):
         while self.connected:
             self.send_data()
             timeout_seqno = self.check_timeout()
-            if timeout_seqno != None:
-                if not self.sackMode:
-                    self.gbn_resend(timeout_seqno)
-                else:
-                    self.sack_resend()
+            self.handle_timeout(timeout_seqno)
             
             self.receive_packet()
             if self.endseqno != None and self.ack > self.endseqno:
                 # received end packet
                 # disconnect
                 self.connected = False
-            
-        
-    def handle_response(self, response):
-        if Checksum.validate_checksum(response):
-            print("recv: %s" % response)
-        else:
-            print("recv: %s <--- CHECKSUM FAILED" % response)
 
-    def handle_timeout(self):
-        pass
+    def handle_timeout(self, seqno):
+        """handle timeout
+
+        Args:
+            seqno ([int]): seqno of the packet which timed out
+        """
+        if seqno != None:
+            if not self.sackMode:
+                self.gbn_resend(seqno)
+            else:
+                self.sack_resend()
 
     def handle_new_ack(self, ack):
-        pass
+        self.ack_count[0] = ack
+        self.ack_count[1] = 1
+        return
 
     def handle_dup_ack(self, ack):
-        pass
+        self.ack_count[1] += 1
+        if self.ack_count[1] > self.dup_ack_threshold:
+            if self.sackMode:
+                self.sack_resend()
+            else:
+                # resend the packet
+                # fast retransmit
+                self.send(self.packets[ack]['packet'])
+        return
+        
 
     def log(self, msg):
         if self.debug:
