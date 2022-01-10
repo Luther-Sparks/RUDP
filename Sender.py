@@ -6,6 +6,7 @@ import getopt
 import Checksum
 import BasicSender
 import time
+import base64
 
 '''
 This is a skeleton sender class. Create a fantastic transport protocol here.
@@ -19,7 +20,7 @@ class Sender(BasicSender.BasicSender):
         self.seqno = 0                              # current seqno
         self.window_size = window_size              # send window size
         self.packet_size = 500                      # packet size
-        self.data = [None, self.infile.read(self.packet_size)]                      # current data and next data
+        self.data = [None, self.read()]             # current data and next data
         self.timeout = timeout                      # timeout
         self.sackMode = sackMode                    # SACK mode
         if self.sackMode:
@@ -32,6 +33,17 @@ class Sender(BasicSender.BasicSender):
         self.ack_count = [None, 0]                  # (ack, duplicate ack count)
         self.dup_ack_threshold = 3                  # duplicate ack threshold
         
+    def read(self):
+        """read from the file and return the data
+
+        Returns:
+            [str]: data read from the file
+        """
+        msg = self.infile.read(self.packet_size)
+        msg = base64.b64encode(msg)
+        msg = msg.decode()
+        return msg
+        
     def get_data(self):
         """get the data to send and store next data to be sent
 
@@ -41,7 +53,7 @@ class Sender(BasicSender.BasicSender):
         """
         msg_type = 'data'
         self.data[0] = self.data[1]
-        self.data[1] = self.infile.read(self.packet_size)
+        self.data[1] = self.read()
         if self.data[1] == '':
             msg_type = 'end'
         return (msg_type, self.data[0])
@@ -59,7 +71,9 @@ class Sender(BasicSender.BasicSender):
             try:
                 self.rpacket = self.receive(self.timeout)
                 if self.rpacket is not None:
+                    print('rpacket', self.rpacket)
                     self.rpacket = self.rpacket.decode()
+                    print('rpacket', self.rpacket)
             except:
                 try_times += 1
                 if try_times >= 5:
@@ -169,15 +183,19 @@ class Sender(BasicSender.BasicSender):
         self.seqno = self.ack
         self.window_start = self.seqno
         while self.connected:
-            self.send_data()
-            timeout_seqno = self.check_timeout()
-            self.handle_timeout(timeout_seqno)
-            
-            self.receive_packet()
-            if self.endseqno != None and self.ack > self.endseqno:
-                # received end packet
-                # disconnect
-                self.connected = False
+            try:
+                self.send_data()
+                timeout_seqno = self.check_timeout()
+                self.handle_timeout(timeout_seqno)
+                
+                self.receive_packet()
+                if self.endseqno != None and self.ack > self.endseqno:
+                    # received end packet
+                    # disconnect
+                    self.connected = False
+            except InterruptedError:
+                print('Interrupted by user')
+                return
 
     def handle_timeout(self, seqno):
         """handle timeout
@@ -237,7 +255,7 @@ if __name__ == "__main__":
 
     port = 33122
     dest = "localhost"
-    filename = "README"
+    filename = "test_photo.png"
     debug = False
     sackMode = False
 

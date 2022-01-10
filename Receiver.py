@@ -1,3 +1,4 @@
+import base64
 import socket
 import getopt
 import sys
@@ -164,6 +165,10 @@ class Receiver():
         msg_type, seqno = pieces[0:2] # first two elements always treated as msg type and seqno
         checksum = pieces[-1] # last is always treated as checksum
         data = '|'.join(pieces[2:-1]) # everything in between is considered data
+        
+        # decode the data piece
+        data = base64.b64decode(data.encode())
+        data = data.decode()
         return msg_type, seqno, data, checksum
 
     def _cleanup(self):

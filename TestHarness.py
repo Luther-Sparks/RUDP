@@ -17,13 +17,14 @@ forwarder, so they will magically be run.
 def tests_to_run(forwarder):
     from tests import BasicTest, RandomDropTest, SackRandomDropTest, OutOfOrderTest, SackOutOfOrderTest, DupPacketTest, SackDupPacketTest
     BasicTest.BasicTest(forwarder, "README")
-    RandomDropTest.RandomDropTest(forwarder, "README")
-    SackRandomDropTest.SackRandomDropTest(forwarder, "README")
-    OutOfOrderTest.OutOfOrderTest(forwarder, "README")
-    SackOutOfOrderTest.SackOutOfOrderTest(forwarder, "README")
-    DupPacketTest.DupPacketTest(forwarder, "README")
-    SackDupPacketTest.SackDupPacketTest(forwarder, "README")
-    DupPacketTest.DupPacketTest(forwarder, "README", [2, 4, 5])
+    # RandomDropTest.RandomDropTest(forwarder, "README")
+    # SackRandomDropTest.SackRandomDropTest(forwarder, "README")
+    # OutOfOrderTest.OutOfOrderTest(forwarder, "README")
+    # SackOutOfOrderTest.SackOutOfOrderTest(forwarder, "README")
+    # DupPacketTest.DupPacketTest(forwarder, "README")
+    # SackDupPacketTest.SackDupPacketTest(forwarder, "README")
+    # DupPacketTest.DupPacketTest(forwarder, "README", [2, 4, 5])
+    BasicTest.BasicTest(forwarder, "test_pdf.pdf")
 """
 Testing is divided into two pieces: this forwarder and a set of test cases in
 the tests directory.
