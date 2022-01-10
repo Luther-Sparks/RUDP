@@ -14,7 +14,7 @@ class Connection():
         self.host = host
         self.port = port
         self.max_buf_size = 5
-        self.outfile = open("%s.%d" % (host,port),"w")
+        self.outfile = open("%s.%d" % (host,port),"wb")
         self.seqnums = {} # enforce single instance of each seqno
 
     def ack(self,seqno, data, sackMode = False):
@@ -168,7 +168,7 @@ class Receiver():
         
         # decode the data piece
         data = base64.b64decode(data.encode())
-        data = data.decode()
+        # data = data.decode()
         return msg_type, seqno, data, checksum
 
     def _cleanup(self):

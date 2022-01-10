@@ -71,9 +71,7 @@ class Sender(BasicSender.BasicSender):
             try:
                 self.rpacket = self.receive(self.timeout)
                 if self.rpacket is not None:
-                    print('rpacket', self.rpacket)
                     self.rpacket = self.rpacket.decode()
-                    print('rpacket', self.rpacket)
             except:
                 try_times += 1
                 if try_times >= 5:
@@ -112,7 +110,6 @@ class Sender(BasicSender.BasicSender):
             msg_type, msg = self.get_data()
             self.spacket = self.make_packet(msg_type, self.seqno, msg)
             if msg_type == 'end' and self.endseqno == None:
-                print('endseqno', self.endseqno)
                 self.endseqno = self.seqno
             # store the packet information in the packet dict
             # so that we can examine timeout and resend it later
